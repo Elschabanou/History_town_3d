@@ -1,0 +1,22 @@
+{
+  "building_0": {
+    "title": "Altes Rathaus",
+    "content": "Das historische Rathaus wurde im 15. Jahrhundert erbaut und diente als Sitz der städtischen Verwaltung. Es war das Zentrum des öffentlichen Lebens und Schauplatz wichtiger Entscheidungen für die Gemeinde."
+  },
+  "building_1": {
+    "title": "Handwerkerhaus",
+    "content": "Dieses Haus gehörte einem wohlhabenden Handwerker, wahrscheinlich einem Schmied oder Bäcker. Die oberen Stockwerke dienten als Wohnraum für die Familie, während das Erdgeschoss die Werkstatt beherbergte."
+  },
+  "building_2": {
+    "title": "Bürgerhaus",
+    "content": "Ein typisches Bürgerhaus aus dem Mittelalter mit Fachwerkkonstruktion. Solche Häuser waren das Zuhause wohlhabender Kaufleute und boten Platz für Familie, Gesinde und Geschäftsräume."
+  },
+  "building_3": {
+    "title": "Werkstatt & Lager",
+    "content": "Eine kombinierte Werkstatt und Lagerhalle. Hier wurden Waren produziert und gelagert, bevor sie auf dem Marktplatz verkauft wurden. Das Gebäude zeigt die wirtschaftliche Bedeutung des Handwerks."
+  },
+  "building_4": {
+    "title": "St. Marien Kirche",
+    "content": "Die zentrale Kirche der Stadt, erbaut im gotischen Stil. Sie war nicht nur religiöses Zentrum, sondern auch Versammlungsort für die Bürger und Ort wichtiger Zeremonien wie Hochzeiten und Beerdigungen."
+  }
+}

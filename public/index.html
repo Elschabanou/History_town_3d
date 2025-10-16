@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historische Stadt 3D - Visualisierung</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <canvas id="threejs-canvas"></canvas>
+
+        <!-- Steuerpanel -->
+        <div id="control-panel">
+            <h3>Steuerung</h3>
+
+            <div class="control-group">
+                <label>Kamera-Modus:</label>
+                <select id="camera-mode">
+                    <option value="drone">Drohnenflug</option>
+                    <option value="first-person">Erste Person</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Licht-Modus:</label>
+                <select id="light-mode">
+                    <option value="day">Tag</option>
+                    <option value="night">Nacht</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <button id="reset-camera">Kamera zurücksetzen</button>
+            </div>
+
+            <div class="performance-info">
+                <div id="fps">FPS: --</div>
+                <div id="render-time">Render: -- ms</div>
+                <div id="memory">RAM: -- MB</div>
+            </div>
+        </div>
+
+        <!-- Annotation Panel -->
+        <div id="annotation-panel" class="hidden">
+            <h4 id="annotation-title"></h4>
+            <p id="annotation-content"></p>
+            <button id="close-annotation">Schließen</button>
+        </div>
+
+        <!-- Lade-Overlay -->
+        <div id="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p>Lade historische Stadt...</p>
+        </div>
+    </div>
+
+    <script type="module" src="../src/main.js"></script>
+</body>
+</html>
