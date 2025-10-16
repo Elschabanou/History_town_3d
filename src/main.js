@@ -57,7 +57,7 @@ let droneLookSmoothing = 0.15; // Smooth Look interpolation (schneller)
 // Kollisionssystem
 let collisionObjects = []; // Array für alle kollidierbaren Objekte
 let cameraRadius = 2.0; // Kollisionsradius für Kameras
-let collisionEnabled = true; // Kollisionen aktiviert
+let collisionEnabled = true; // Kollisionen aktiv
 
 // DOM Elemente - werden nach DOMContentLoaded geladen
 let canvas, cameraModeSelect, lightModeSelect, resetCameraBtn, shadowToggle;
@@ -299,6 +299,10 @@ async function createCity() {
         // Persische Stadt laden
         await loadGLTFModel('/models/environment/persian_city.glb', {x: 0, y: 0, z: 0}, {x: 0.25, y: 0.25, z: 0.25}, 'persian_city');
         console.log('Persische Stadt erfolgreich geladen');
+
+        // Kollisionsobjekte prüfen und Kollisionen aktivieren
+        debugCollisionObjects();
+        toggleCollisions(true);
     } catch (error) {
         console.error('Fehler beim Laden der persischen Stadt:', error);
         // Fallback: Einfache Szene erstellen
@@ -445,43 +449,61 @@ function toggleShadows(enabled) {
 
 // Kollisionsprüfung
 function checkCollision(newPosition, camera) {
-    // Kollisionen temporär deaktiviert für Debugging
-    if (!collisionEnabled) {
-        return false;
-    }
-    
-    // Debug: Prüfe ob Kollisionsobjekte vorhanden sind
-    if (collisionObjects.length === 0) {
-        return false; // Keine Kollisionsobjekte = keine Kollision
-    }
-    
+    if (!collisionEnabled || collisionObjects.length === 0) return false;
+
     const cameraPos = new THREE.Vector3(newPosition.x, newPosition.y, newPosition.z);
-    
+
     for (let obj of collisionObjects) {
-        if (obj.geometry && obj.position) {
-            try {
-                // Einfache Box-Kollision für Gebäude
-                const box = new THREE.Box3().setFromObject(obj);
-                const expandedBox = box.clone().expandByScalar(cameraRadius);
-                
-                if (expandedBox.containsPoint(cameraPos)) {
-                    console.log('Kollision erkannt mit:', obj);
-                    return true; // Kollision erkannt
-                }
-            } catch (error) {
-                console.warn('Fehler bei Kollisionsprüfung:', error);
-                continue; // Weiter mit nächstem Objekt
+        if (!obj.geometry) continue;
+        try {
+            const box = new THREE.Box3().setFromObject(obj);
+            // Vertikale Überschneidung prüfen
+            const withinY = cameraPos.y >= (box.min.y - 0.5) && cameraPos.y <= (box.max.y + 1.0);
+            if (!withinY) continue;
+
+            // 2D XZ-Kollision mit Kameraradius
+            const minX = box.min.x - cameraRadius;
+            const maxX = box.max.x + cameraRadius;
+            const minZ = box.min.z - cameraRadius;
+            const maxZ = box.max.z + cameraRadius;
+
+            if (cameraPos.x >= minX && cameraPos.x <= maxX && cameraPos.z >= minZ && cameraPos.z <= maxZ) {
+                return true;
             }
+        } catch (_) {
+            continue;
         }
     }
-    return false; // Keine Kollision
+    return false;
 }
 
 // Kollisionsobjekte zur Szene hinzufügen
 function addCollisionObject(object) {
-    if (object && object.geometry) {
+    if (!object || !object.geometry) return;
+    try {
+        // Heuristik: Nur plausible Gebäude registrieren, keine riesigen/zu flachen/Untergrund-Objekte
+        const box = new THREE.Box3().setFromObject(object);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+
+        // Sehr große Hüllen (z.B. gesamtes Stadt-Mesh) ignorieren
+        if (size.x > 300 || size.z > 300) return;
+        // Sehr flache Objekte (Boden, Straßen, Dekal) ignorieren
+        if (size.y < 1.5) return;
+        // Namen-basierter Filter für Boden
+        const name = (object.name || '').toLowerCase();
+        if (name.includes('ground') || name.includes('floor') || name.includes('road')) return;
+        // Transparente Objekte ignorieren
+        const mat = object.material;
+        if (Array.isArray(mat)) {
+            if (mat.some(m => m && m.transparent)) return;
+        } else if (mat && mat.transparent) {
+            return;
+        }
+
         collisionObjects.push(object);
-        console.log('Kollisionsobjekt hinzugefügt:', object);
+    } catch (_) {
+        // Ignorieren, falls Box nicht berechnet werden kann
     }
 }
 
