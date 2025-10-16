@@ -18,5 +18,13 @@
   "building_4": {
     "title": "St. Marien Kirche",
     "content": "Die zentrale Kirche der Stadt, erbaut im gotischen Stil. Sie war nicht nur religiöses Zentrum, sondern auch Versammlungsort für die Bürger und Ort wichtiger Zeremonien wie Hochzeiten und Beerdigungen."
+  },
+  "tower": {
+    "title": "Wachturm",
+    "content": "Ein imposanter Wachturm, der als Beobachtungsposten und Verteidigungsanlage diente. Von hier aus konnte man die gesamte Stadt überblicken und frühzeitig Gefahren erkennen."
+  },
+  "persian_city": {
+    "title": "Persische Stadt",
+    "content": "Eine wunderschöne persische Stadt mit traditioneller Architektur, Kuppeln, Minaretten und orientalischen Elementen. Diese Stadt repräsentiert die reiche Kultur und Geschichte des persischen Reiches."
   }
 }

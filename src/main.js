@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import Stats from 'stats.js';
 import * as dat from 'dat.gui';
 
@@ -20,11 +21,11 @@ let annotationData = {};
 let raycaster, mouse;
 
 // Loader
-let gltfLoader, objLoader, mtlLoader;
+let gltfLoader, objLoader, mtlLoader, rgbeLoader;
 
 // First-Person Controls
 let keys = {};
-let moveSpeed = 8.0;
+let moveSpeed = 20.0;
 let lookSpeed = 0.002;
 let pitch = 0;
 let yaw = 0;
@@ -62,6 +63,9 @@ async function init() {
         // Erstelle Licht
         createLighting();
 
+        // Erstelle Loader
+        createLoaders();
+
         // Erstelle Stadt
         await createCity();
 
@@ -90,7 +94,7 @@ async function init() {
 function createScene() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB); // Himmelblau für Tag
-    scene.fog = new THREE.Fog(0x87CEEB, 50, 1000);
+    // Fog wird später dynamisch gesetzt, abhängig vom Himmel
 }
 
 // Kameras erstellen
@@ -169,8 +173,28 @@ function createLighting() {
     });
 }
 
-// Stadt erstellen (einfache Geometrien als Platzhalter)
+// Persische Stadt laden
 async function createCity() {
+    try {
+        // HDRI-Himmel laden basierend auf aktuellem Modus
+        if (isDayMode) {
+            await loadHDRIEnvironment('/models/sky/citrus_orchard_road_puresky_4k.hdr');
+        } else {
+            await loadHDRIEnvironment('/models/sky/night/qwantani_moon_noon_puresky_4k.hdr');
+        }
+        
+        // Persische Stadt laden
+        await loadGLTFModel('/models/environment/persian_city.glb', {x: 0, y: 0, z: 0}, {x: 0.25, y: 0.25, z: 0.25}, 'persian_city');
+        console.log('Persische Stadt erfolgreich geladen');
+    } catch (error) {
+        console.error('Fehler beim Laden der persischen Stadt:', error);
+        // Fallback: Einfache Szene erstellen
+        createFallbackScene();
+    }
+}
+
+// Fallback-Szene falls persische Stadt nicht lädt
+function createFallbackScene() {
     // Boden
     const groundGeometry = new THREE.PlaneGeometry(200, 200);
     const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
@@ -189,14 +213,100 @@ async function createCity() {
     createTrees();
 }
 
+// Loader erstellen
+function createLoaders() {
+    gltfLoader = new GLTFLoader();
+    objLoader = new OBJLoader();
+    mtlLoader = new MTLLoader();
+    rgbeLoader = new RGBELoader();
+}
+
+// GLTF-Modell laden
+async function loadGLTFModel(path, position = {x: 0, y: 0, z: 0}, scale = {x: 1, y: 1, z: 1}, annotationId = null) {
+    return new Promise((resolve, reject) => {
+        gltfLoader.load(
+            path,
+            (gltf) => {
+                const model = gltf.scene;
+                model.position.set(position.x, position.y, position.z);
+                model.scale.set(scale.x, scale.y, scale.z);
+                model.castShadow = true;
+                model.receiveShadow = true;
+
+                // Annotation-Daten hinzufügen (falls angegeben)
+                if (annotationId) {
+                    model.userData.annotationId = annotationId;
+                    model.userData.clickable = true;
+                }
+
+                scene.add(model);
+                resolve(model);
+            },
+            (progress) => console.log('Loading progress:', progress),
+            (error) => reject(error)
+        );
+    });
+}
+
+// HDRI-Himmel laden
+async function loadHDRIEnvironment(path) {
+    return new Promise((resolve, reject) => {
+        rgbeLoader.load(
+            path,
+            (texture) => {
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+                scene.background = texture;
+                scene.environment = texture; // Für realistische Reflexionen
+                
+                // Realistischen Fog basierend auf HDRI-Himmel setzen
+                setRealisticFog();
+                
+                console.log('HDRI-Himmel erfolgreich geladen');
+                resolve(texture);
+            },
+            (progress) => console.log('HDRI Loading progress:', progress),
+            (error) => reject(error)
+        );
+    });
+}
+
+// Realistischen Fog setzen
+function setRealisticFog() {
+    // Verstärkter Fog für bessere Tiefenwirkung - weniger blau, mehr neutral
+    scene.fog = new THREE.FogExp2(0xB0C4DE, 0.0015); // Verstärkter Fog
+}
+
+// Fog basierend auf Kamera-Höhe anpassen
+function updateFogForCamera() {
+    if (!scene.fog) return;
+    
+    const cameraHeight = currentCamera.position.y;
+    
+    // Bei hoher Kamera-Position (Drohnenflug) Fog reduzieren
+    if (cameraHeight > 50) {
+        if (isDayMode) {
+            scene.fog = new THREE.FogExp2(0xC0C8D0, 0.0008); // Verstärkter neutraler Fog
+        } else {
+            scene.fog = new THREE.FogExp2(0x2F2F3F, 0.0010); // Verstärkter dunkler Fog
+        }
+    } else {
+        // Bei niedriger Position normaler Fog
+        if (isDayMode) {
+            scene.fog = new THREE.FogExp2(0xB0C4DE, 0.0015); // Verstärkter grau-blau Fog
+        } else {
+            scene.fog = new THREE.FogExp2(0x2F2F3F, 0.0020); // Verstärkter dunkler Fog
+        }
+    }
+}
+
 // Einfache Gebäude erstellen
 function createSimpleBuildings() {
     const buildingPositions = [
-        { x: -30, z: -30, w: 8, h: 15, d: 8, color: 0x8B4513 },
-        { x: 30, z: -30, w: 10, h: 20, d: 10, color: 0x696969 },
-        { x: -30, z: 30, w: 12, h: 18, d: 12, color: 0x8B4513 },
-        { x: 30, z: 30, w: 9, h: 25, d: 9, color: 0x696969 },
-        { x: 0, z: 0, w: 15, h: 30, d: 15, color: 0xDAA520 } // Kirche
+        { x: -30, z: -30, w: 2.4, h: 4.5, d: 2.4, color: 0x8B4513 },
+        { x: 30, z: -30, w: 3, h: 6, d: 3, color: 0x696969 },
+        { x: -30, z: 30, w: 3.6, h: 5.4, d: 3.6, color: 0x8B4513 },
+        { x: 30, z: 30, w: 2.7, h: 7.5, d: 2.7, color: 0x696969 }
+        // Kirche in der Mitte wird durch Tower ersetzt
     ];
 
     buildingPositions.forEach((building, index) => {
@@ -356,13 +466,19 @@ function switchCameraMode(mode) {
 }
 
 // Tag/Nacht Modus umschalten
-function toggleDayNight(isNight) {
+async function toggleDayNight(isNight) {
     isDayMode = !isNight;
 
     if (isDayMode) {
-        // Tag-Modus
-        scene.background = new THREE.Color(0x87CEEB);
-        scene.fog.color = new THREE.Color(0x87CEEB);
+        // Tag-Modus - HDRI-Himmel laden
+        try {
+            await loadHDRIEnvironment('/models/sky/citrus_orchard_road_puresky_4k.hdr');
+        } catch (error) {
+            console.error('Fehler beim Laden des HDRI-Himmels:', error);
+            // Fallback zu einfachem Himmel
+            scene.background = new THREE.Color(0x87CEEB);
+            setRealisticFog();
+        }
         ambientLight.intensity = 0.3;
         directionalLight.intensity = 1.0;
 
@@ -370,9 +486,17 @@ function toggleDayNight(isNight) {
             light.intensity = 0;
         });
     } else {
-        // Nacht-Modus
-        scene.background = new THREE.Color(0x191970);
-        scene.fog.color = new THREE.Color(0x191970);
+        // Nacht-Modus - HDRI-Nachthimmel laden
+        try {
+            await loadHDRIEnvironment('/models/sky/night/qwantani_moon_noon_puresky_4k.hdr');
+        } catch (error) {
+            console.error('Fehler beim Laden des HDRI-Nachthimmels:', error);
+            // Fallback zu einfachem dunklen Himmel
+            scene.background = new THREE.Color(0x191970);
+            scene.environment = null;
+        }
+        // Verstärkter Fog für Nacht - weniger blau
+        scene.fog = new THREE.FogExp2(0x2F2F3F, 0.0020);
         ambientLight.intensity = 0.1;
         directionalLight.intensity = 0.1;
 
@@ -498,6 +622,41 @@ function updateFirstPersonMovement(deltaTime) {
     }
 }
 
+// Drohnen-Kamera Movement verarbeiten
+function updateDroneMovement(deltaTime) {
+    if (currentCamera !== droneCamera) return;
+
+    const moveVector = new THREE.Vector3();
+    const speed = moveSpeed * deltaTime;
+
+    // WASD für horizontale Bewegung (korrigierte Richtungen)
+    if (keys['KeyW']) {
+        moveVector.z -= speed; // Vorwärts
+    }
+    if (keys['KeyS']) {
+        moveVector.z += speed; // Rückwärts
+    }
+    if (keys['KeyA']) {
+        moveVector.x -= speed; // Links
+    }
+    if (keys['KeyD']) {
+        moveVector.x += speed; // Rechts
+    }
+
+    // Pfeiltasten für vertikale Bewegung
+    if (keys['ArrowUp']) {
+        moveVector.y += speed; // Hoch
+    }
+    if (keys['ArrowDown']) {
+        moveVector.y -= speed; // Runter
+    }
+
+    // Bewegung anwenden
+    if (moveVector.length() > 0) {
+        droneCamera.position.add(moveVector);
+    }
+}
+
 // Fenstergröße ändern
 function onWindowResize() {
     const width = window.innerWidth;
@@ -528,6 +687,12 @@ function animate() {
 
     // First-Person Movement
     updateFirstPersonMovement(deltaTime);
+
+    // Drohnen-Kamera Movement
+    updateDroneMovement(deltaTime);
+
+    // Fog basierend auf Kamera-Position anpassen
+    updateFogForCamera();
 
     // Renderer
     renderer.render(scene, currentCamera);
