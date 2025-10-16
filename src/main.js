@@ -57,7 +57,7 @@ let droneLookSmoothing = 0.15; // Smooth Look interpolation (schneller)
 // Kollisionssystem
 let collisionObjects = []; // Array für alle kollidierbaren Objekte
 let cameraRadius = 2.0; // Kollisionsradius für Kameras
-let collisionEnabled = false; // Temporär deaktiviert für Debugging
+let collisionEnabled = true; // Kollisionen aktiviert
 
 // DOM Elemente - werden nach DOMContentLoaded geladen
 let canvas, cameraModeSelect, lightModeSelect, resetCameraBtn, shadowToggle;
