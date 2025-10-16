@@ -1,0 +1,31 @@
+{
+  "name": "history_town_3d",
+  "version": "1.0.0",
+  "description": "Die Aufgabe des Programmentwurfs besteht in der Erstellung einer interaktiven 3D-Visualisierung einer historischen Stadt.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Elschabanou/History_town_3d.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Elschabanou/History_town_3d/issues"
+  },
+  "homepage": "https://github.com/Elschabanou/History_town_3d#readme",
+  "devDependencies": {
+    "@types/three": "^0.180.0",
+    "dat.gui": "^0.7.9",
+    "stats.js": "^0.17.0",
+    "three": "^0.180.0",
+    "vite": "^6.4.0"
+  }
+}
